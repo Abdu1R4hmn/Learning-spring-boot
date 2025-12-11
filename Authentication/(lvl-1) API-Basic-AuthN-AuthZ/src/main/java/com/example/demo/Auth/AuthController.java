@@ -10,7 +10,7 @@ public class AuthController {
 
     @GetMapping("/public")
     public String hello() {
-        return "Hello, you are public!";
+        return "Hello, you are public! // Log in here.....";
     }
 
 

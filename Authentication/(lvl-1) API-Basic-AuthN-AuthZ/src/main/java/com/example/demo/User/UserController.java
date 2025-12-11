@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     @GetMapping("/user")
-    public String any(){
+    public String user(){
 
      return "Authenticated" ;
     }
