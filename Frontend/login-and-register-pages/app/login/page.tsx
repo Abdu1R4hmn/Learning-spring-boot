@@ -1,26 +1,30 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { useState } from "react";
+import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const { login } = useAuth();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsLoading(true)
-    // TODO: Add actual authentication logic
-    console.log("Login attempt:", { username, password })
-    setTimeout(() => setIsLoading(false), 1000)
-  }
+    e.preventDefault();
+    setIsLoading(true);
+    const success = await login(username, password);
+    setIsLoading(false);
+    if (success) {
+      alert(`Welcome ${username}! You are now logged in.`);
+    } else {
+      alert("Invalid credentials. Please try again.");
+    }
+  };
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -42,7 +46,6 @@ export default function LoginPage() {
                 required
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -54,12 +57,10 @@ export default function LoginPage() {
                 required
               />
             </div>
-
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Logging in..." : "Login"}
             </Button>
           </form>
-
           <div className="mt-4 text-center text-sm">
             <span className="text-muted-foreground">Don't have an account? </span>
             <Link href="/register" className="text-primary hover:underline font-medium">
@@ -69,5 +70,5 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </main>
-  )
+  );
 }
