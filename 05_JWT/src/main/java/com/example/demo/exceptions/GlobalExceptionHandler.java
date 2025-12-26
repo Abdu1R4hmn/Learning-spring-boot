@@ -1,6 +1,8 @@
 package com.example.demo.exceptions;
 
 import com.example.demo.exceptions.customHandlers.EmailAlreadyExists;
+import com.example.demo.exceptions.customHandlers.RefreshTokenExpired;
+import com.example.demo.exceptions.customHandlers.RefreshTokenRevoked;
 import com.example.demo.exceptions.customHandlers.ResourseNotFound;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,9 +27,27 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourseNotFound.class)
     public ResponseEntity<ApiErrorResponse> handleResourseNotFound(ResourseNotFound ex){
-        return ResponseEntity.status(HttpStatus.CONFLICT)
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ApiErrorResponse(
                         HttpStatus.NOT_FOUND.value(),
+                        ex.getMessage()
+                ));
+    }
+
+    @ExceptionHandler(RefreshTokenExpired.class)
+    public ResponseEntity<ApiErrorResponse> handleRefreshTokenExpired(BussinessException ex){
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ApiErrorResponse(
+                        HttpStatus.CONFLICT.value(),
+                        ex.getMessage()
+                ));
+    }
+
+    @ExceptionHandler(RefreshTokenRevoked.class)
+    public ResponseEntity<ApiErrorResponse> handleRefreshTokenRevoked(BussinessException ex){
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ApiErrorResponse(
+                        HttpStatus.CONFLICT.value(),
                         ex.getMessage()
                 ));
     }
@@ -40,6 +60,8 @@ public class GlobalExceptionHandler {
                         ex.getMessage()
                 ));
     }
+
+
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleValidationException(MethodArgumentNotValidException ex){

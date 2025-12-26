@@ -1,6 +1,7 @@
 package com.example.demo.auth;
 
 import com.example.demo.exceptions.customHandlers.EmailAlreadyExists;
+import com.example.demo.exceptions.customHandlers.ResourseNotFound;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,10 +26,10 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws EmailAlreadyExists {
+    public UserDetails loadUserByUsername(String email) throws ResourseNotFound {
 
         User user = userRepository.findByEmail(email).orElseThrow(() ->
-                new EmailAlreadyExists(email));
+                new ResourseNotFound("Email " + email));
 
         Set<GrantedAuthority> authorities = user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority(role.getName()))

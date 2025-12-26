@@ -1,26 +1,28 @@
 package com.example.demo.auth;
 
+import com.example.demo.auth.Dto.LoginResponseDto;
+import com.example.demo.auth.Dto.RefreshTokenRequest;
+import com.example.demo.auth.refreshToken.RefreshToken;
+import com.example.demo.auth.refreshToken.RefreshTokenService;
 import com.example.demo.exceptions.customHandlers.EmailAlreadyExists;
 import com.example.demo.exceptions.customHandlers.ResourseNotFound;
 import com.example.demo.role.Role;
 import com.example.demo.role.RoleRepository;
-import com.example.demo.user.Dto.LoginDto;
-import com.example.demo.user.Dto.RegisterDto;
+import com.example.demo.auth.Dto.LoginRequestDto;
+import com.example.demo.auth.Dto.RegisterDto;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.Collections;
 import java.util.Set;
 
 @RestController
@@ -37,6 +39,11 @@ public class AuthController{
     private final AuthenticationManager authenticationManager;
     @Autowired
     private final JwtService jwtService;
+    @Autowired
+    private RefreshTokenService refreshTokenService;
+    @Autowired
+    private UserDetailsService userDetailsService;
+
 
     public AuthController(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtService jwtService) {
         this.userRepository = userRepository;
@@ -48,15 +55,23 @@ public class AuthController{
 
 
     @PostMapping("/login")
-    public String login(@Valid @RequestBody LoginDto dto){
+    public LoginResponseDto login(@Valid @RequestBody LoginRequestDto dto){
+
         Authentication authentication = authenticationManager.
-                authenticate(new UsernamePasswordAuthenticationToken(dto.getEmail(),dto.getPassword()));
+                authenticate(new UsernamePasswordAuthenticationToken(
+                        dto.getEmail(),
+                        dto.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        String token = jwtService.generateToken(userDetails);
+        String accessToken = jwtService.generateToken(userDetails);
 
-        return token;
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(()-> new ResourseNotFound("User"));
+
+        String refreshToken = refreshTokenService.createRefreshToken(user);
+
+        return new LoginResponseDto(accessToken, refreshToken);
 
     }
 
@@ -79,4 +94,18 @@ public class AuthController{
         userRepository.save(user);
     }
 
+    @PostMapping("/refresh")
+    public LoginResponseDto refresh(@RequestBody RefreshTokenRequest request){
+
+        RefreshToken oldToken = refreshTokenService.validateRefreshToken(request.getRefreshToken());
+
+        String email = oldToken.getUser().getEmail();
+        UserDetails user = userDetailsService.loadUserByUsername(email);
+
+        String newAccessToken = jwtService.generateToken(user);
+
+        String newRefreshToken = refreshTokenService.rotateRefreshToken(oldToken);
+
+        return new LoginResponseDto(newAccessToken,newRefreshToken);
+    }
 }

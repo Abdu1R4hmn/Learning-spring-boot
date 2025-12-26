@@ -1,4 +1,4 @@
-package com.example.demo.user.Dto;
+package com.example.demo.auth.Dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class LoginDto {
+public class LoginRequestDto {
 
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
