@@ -1,16 +1,16 @@
 package com.example.demo.auth;
 
-import com.example.demo.auth.Dto.LoginResponseDto;
-import com.example.demo.auth.Jwt.JwtService;
-import com.example.demo.auth.refreshToken.RefreshToken;
-import com.example.demo.auth.refreshToken.RefreshTokenService;
+import com.example.demo.Dto.LoginResponseDto;
+import com.example.demo.Jwt.JwtService;
+import com.example.demo.refreshToken.RefreshToken;
+import com.example.demo.refreshToken.RefreshTokenService;
 import com.example.demo.exceptions.customHandlers.EmailAlreadyExists;
 import com.example.demo.exceptions.customHandlers.RefreshTokenExpired;
 import com.example.demo.exceptions.customHandlers.ResourseNotFound;
 import com.example.demo.role.Role;
 import com.example.demo.role.RoleRepository;
-import com.example.demo.auth.Dto.LoginRequestDto;
-import com.example.demo.auth.Dto.RegisterDto;
+import com.example.demo.Dto.LoginRequestDto;
+import com.example.demo.Dto.RegisterDto;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;
 import jakarta.servlet.http.Cookie;
@@ -121,16 +121,15 @@ public class AuthController{
             throw new RefreshTokenExpired();
         }
 
-        RefreshToken oldToken = refreshTokenService.validateRefreshToken(refreshToken);
+        RefreshToken newRefreshToken = refreshTokenService.validateRefreshToken(refreshToken);
+        String email = newRefreshToken.getUser().getEmail();
 
-        String email = oldToken.getUser().getEmail();
         UserDetails user = userDetailsService.loadUserByUsername(email);
 
         String newAccessToken = jwtService.generateToken(user);
 
-        String newRefreshToken = refreshTokenService.rotateRefreshToken(oldToken);
-
-        ResponseCookie responseCookie = ResponseCookie.from("refreshToken",newRefreshToken)
+        String refreshtoken = newRefreshToken.toString();
+        ResponseCookie responseCookie = ResponseCookie.from("refreshToken",refreshToken)
                 .httpOnly(true)
                 .secure(false)
                 .path("/api/auth")
@@ -164,7 +163,7 @@ public class AuthController{
         ResponseCookie deleteCookie = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
                 .secure(false) // true in prod
-                .path("/api/auth/refresh")
+                .path("/api/auth")
                 .sameSite("Lax")
                 .maxAge(0)
                 .build();

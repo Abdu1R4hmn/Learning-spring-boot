@@ -1,4 +1,4 @@
-package com.example.demo.auth.refreshToken;
+package com.example.demo.refreshToken;
 
 import com.example.demo.exceptions.customHandlers.RefreshTokenExpired;
 import com.example.demo.exceptions.customHandlers.RefreshTokenReuseDetected;
@@ -6,6 +6,7 @@ import com.example.demo.exceptions.customHandlers.ResourseNotFound;
 import com.example.demo.user.User;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -13,7 +14,7 @@ import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.UUID;
 
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -21,7 +22,7 @@ public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
 
-//    @Value("${REFRESH_TOKEN_VALIDITY_DAYS}")
+    //    @Value("${REFRESH_TOKEN_VALIDITY_DAYS}")
     private final long refreshTokenValidity = 7;
 
 
@@ -49,29 +50,23 @@ public class RefreshTokenService {
 
         if (refreshToken.isRevoked() || refreshToken.getLastUsedAt() != null){
             revokeAllUserTokens(refreshToken.getUser().getId());
+            log.info("Refresh Token has been revoked");
             throw new RefreshTokenReuseDetected();
         }
 
         if(refreshToken.getExpiresAt().isBefore(Instant.now())){
             throw new RefreshTokenExpired();
         }
-
+        refreshToken.setRevoked(true);
         refreshToken.setLastUsedAt(Instant.now());
+
+        createRefreshToken(refreshToken.getUser());
+
         refreshTokenRepository.save(refreshToken);
 
         return refreshToken;
     }
 
-    public String rotateRefreshToken(RefreshToken oldToken){
-        revokeToken(oldToken);
-
-        return createRefreshToken(oldToken.getUser());
-    }
-
-    public void revokeToken(RefreshToken token){
-        token.setRevoked(true);
-        refreshTokenRepository.save(token);
-    }
 
     public void revokeAllUserTokens(Long userId) {
         refreshTokenRepository.deleteAllByUserId(userId);

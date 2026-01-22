@@ -1,4 +1,4 @@
-package com.example.demo.auth.refreshToken;
+package com.example.demo.refreshToken;
 
 import com.example.demo.user.User;
 import jakarta.persistence.*;

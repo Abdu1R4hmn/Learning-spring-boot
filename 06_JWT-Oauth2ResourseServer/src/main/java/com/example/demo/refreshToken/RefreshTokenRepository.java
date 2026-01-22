@@ -1,4 +1,4 @@
-package com.example.demo.auth.refreshToken;
+package com.example.demo.refreshToken;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

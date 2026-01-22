@@ -1,6 +1,7 @@
 package com.example.demo.auth;
 
-import com.example.demo.auth.Jwt.JwtAuthenticationFilter;
+import com.example.demo.Jwt.JwtConfig;
+import com.example.demo.Jwt.JwtService;
 import com.example.demo.exceptions.authExceptions.RestAccessDeniedHandler;
 import com.example.demo.exceptions.authExceptions.RestAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
@@ -13,7 +14,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -21,12 +21,14 @@ public class SecurityConfig {
 
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtConfig jwtConfig;
+    private final JwtService jwtService;
 
-    public SecurityConfig(RestAuthenticationEntryPoint restAuthenticationEntryPoint, RestAccessDeniedHandler restAccessDeniedHandler, JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(RestAuthenticationEntryPoint restAuthenticationEntryPoint, RestAccessDeniedHandler restAccessDeniedHandler, JwtConfig jwtConfig, JwtService jwtService) {
         this.restAuthenticationEntryPoint = restAuthenticationEntryPoint;
         this.restAccessDeniedHandler = restAccessDeniedHandler;
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.jwtConfig = jwtConfig;
+        this.jwtService = jwtService;
     }
 
     @Bean
@@ -46,10 +48,9 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .logout(logout -> logout.disable())
-                .addFilterBefore(
-                        jwtAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class
-                );
+                .oauth2ResourceServer(outh2 ->
+                        outh2.jwt(jwt ->
+                                jwt.jwtAuthenticationConverter(jwtConfig.jwtAuthenticationConverter())));
 
         return http.build();
     }

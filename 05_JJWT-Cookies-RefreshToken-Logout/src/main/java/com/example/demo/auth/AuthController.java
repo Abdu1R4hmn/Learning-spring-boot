@@ -16,6 +16,7 @@ import com.example.demo.user.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -32,6 +33,7 @@ import java.util.Set;
 
 import static org.springframework.http.CacheControl.maxAge;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController{
@@ -81,13 +83,12 @@ public class AuthController{
         ResponseCookie responseCookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
                 .secure(false)
-                .path("/auth/api/refreshToken")
+                .path("/auth/api")
                 .maxAge(7 * 24 * 60 * 60)
                 .sameSite("Lax")
                 .build();
-
+        log.info("Login complete");
         response.addHeader(HttpHeaders.SET_COOKIE, refreshToken.toString());
-
         return new LoginResponseDto(accessToken);
 
     }
@@ -113,30 +114,34 @@ public class AuthController{
 
     @PostMapping("/refresh")
     public LoginResponseDto refresh(@CookieValue(name = "refreshToken", required = false) String refreshToken ,HttpServletResponse response){
+        log.info("Refresh Start;");
 
         if (refreshToken == null){
             throw new RefreshTokenExpired();
         }
 
         RefreshToken oldToken = refreshTokenService.validateRefreshToken(refreshToken);
+        log.info("Validate complete;");
 
         String email = oldToken.getUser().getEmail();
         UserDetails user = userDetailsService.loadUserByUsername(email);
 
         String newAccessToken = jwtService.generateToken(user);
+        log.info("Access token new complete;");
 
         String newRefreshToken = refreshTokenService.rotateRefreshToken(oldToken);
+        log.info("Rotate token;");
 
         ResponseCookie responseCookie = ResponseCookie.from("refreshToken",newRefreshToken)
                 .httpOnly(true)
                 .secure(false)
-                .path("/api/auth/refresh")
+                .path("/api/auth")
                 .maxAge(7 * 24 * 60 * 60)
                 .sameSite("Lex")
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE,responseCookie.toString());
 
-
+        log.info("Refresh complete;");
         return new LoginResponseDto(newAccessToken);
     }
 
@@ -158,7 +163,7 @@ public class AuthController{
         ResponseCookie deleteCookies = ResponseCookie.from("refreshToken","")
                 .httpOnly(true)
                 .secure(false)
-                .path("/api/auth/refresh")
+                .path("/api/auth")
                 .sameSite("Lex")
                 .maxAge(0)
                 .build();

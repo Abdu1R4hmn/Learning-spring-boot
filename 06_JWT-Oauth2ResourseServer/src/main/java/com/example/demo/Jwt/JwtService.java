@@ -1,4 +1,4 @@
-package com.example.demo.auth.Jwt;
+package com.example.demo.Jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -50,34 +50,4 @@ public class JwtService {
                 .compact();
     }
 
-    public String extractUsername(String token){
-        return parseClaims(token).getSubject();
-    }
-
-    public List<String> extractRoles(String token){
-        return parseClaims(token).get("roles", List.class);
-    }
-
-    public Date extractExpiration(String token){
-        return parseClaims(token).getExpiration();
-    }
-
-    private boolean isTokenExpired(String token){
-        return extractExpiration(token).before(new Date());
-    }
-
-    public boolean isTokenValid(String token, UserDetails userDetails){
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())
-                && !isTokenExpired(token)
-        );
-    }
-
-    private Claims parseClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-    }
 }
