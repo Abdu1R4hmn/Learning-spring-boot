@@ -2,6 +2,7 @@ package com.example.demo.auth;
 
 import com.example.demo.Dto.LoginResponseDto;
 import com.example.demo.Jwt.JwtService;
+import com.example.demo.Jwt.RotatationResult;
 import com.example.demo.refreshToken.RefreshToken;
 import com.example.demo.refreshToken.RefreshTokenService;
 import com.example.demo.exceptions.customHandlers.EmailAlreadyExists;
@@ -81,6 +82,7 @@ public class AuthController{
 
         String refreshToken = refreshTokenService.createRefreshToken(user);
 
+
         ResponseCookie responseCookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
                 .secure(false)
@@ -121,15 +123,13 @@ public class AuthController{
             throw new RefreshTokenExpired();
         }
 
-        RefreshToken newRefreshToken = refreshTokenService.validateRefreshToken(refreshToken);
-        String email = newRefreshToken.getUser().getEmail();
+        RotatationResult newRefreshToken = refreshTokenService.validateRefreshToken(refreshToken);
 
-        UserDetails user = userDetailsService.loadUserByUsername(email);
+        UserDetails user = userDetailsService.loadUserByUsername(newRefreshToken.user().getEmail());
 
         String newAccessToken = jwtService.generateToken(user);
 
-        String refreshtoken = newRefreshToken.toString();
-        ResponseCookie responseCookie = ResponseCookie.from("refreshToken",refreshToken)
+        ResponseCookie responseCookie = ResponseCookie.from("refreshToken",newRefreshToken.token())
                 .httpOnly(true)
                 .secure(false)
                 .path("/api/auth")

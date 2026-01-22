@@ -1,5 +1,6 @@
 package com.example.demo.refreshToken;
 
+import com.example.demo.Jwt.RotatationResult;
 import com.example.demo.exceptions.customHandlers.RefreshTokenExpired;
 import com.example.demo.exceptions.customHandlers.RefreshTokenReuseDetected;
 import com.example.demo.exceptions.customHandlers.ResourseNotFound;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.sql.Ref;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -38,14 +40,15 @@ public class RefreshTokenService {
                 Instant.now().plusSeconds(refreshTokenValidity * 24 * 60 * 60)
         );
         refreshTokenRepository.save(refreshToken);
+        log.info("RefreshToken created: {}", refreshToken);
         return rawToken;
     }
 
-    public RefreshToken validateRefreshToken(String rawToken) throws ResourseNotFound, RefreshTokenExpired, RefreshTokenReuseDetected {
+    public RotatationResult validateRefreshToken(String rawToken) throws ResourseNotFound, RefreshTokenExpired, RefreshTokenReuseDetected {
 
-        String hashedToken = hashToken(rawToken);
+        String hashToken = hashToken(rawToken);
 
-        RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(hashedToken)
+        RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(hashToken)
                 .orElseThrow(() -> new ResourseNotFound("Refresh Token "));
 
         if (refreshToken.isRevoked() || refreshToken.getLastUsedAt() != null){
@@ -53,18 +56,22 @@ public class RefreshTokenService {
             log.info("Refresh Token has been revoked");
             throw new RefreshTokenReuseDetected();
         }
-
+        log.info("Refresh Token has been validated");
         if(refreshToken.getExpiresAt().isBefore(Instant.now())){
             throw new RefreshTokenExpired();
         }
         refreshToken.setRevoked(true);
+        log.info("Refresh Token has been revoked");
         refreshToken.setLastUsedAt(Instant.now());
 
-        createRefreshToken(refreshToken.getUser());
+
 
         refreshTokenRepository.save(refreshToken);
 
-        return refreshToken;
+        log.info("calling new create refresh toekn");
+        String newRefreshToken = createRefreshToken(refreshToken.getUser());
+
+        return new RotatationResult(refreshToken.getUser(), newRefreshToken);
     }
 
 
